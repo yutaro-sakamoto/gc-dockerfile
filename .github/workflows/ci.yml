@@ -1,0 +1,62 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  workflow_dispatch:
+    inputs:
+      push_to_dockerhub:
+        description: "Push to Docker Hub"
+        required: false
+        default: "false"
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Load configuration
+        run: |
+          echo gnucobol_osscons_patch_version="$(jq -r '.gnucobol_osscons_patch_version' build-config.json)" >> $GITHUB_ENV
+          echo version_string_prefix="$(jq -r '.version_string_prefix' build-config.json)" >> $GITHUB_ENV
+
+      - name: Build a docker image
+        run: |
+          docker build -t opensourcecobol/gnucobol-osscons-patch:"$version_string_prefix" . \
+          --build-arg gnucobol_osscons_patch_version="$gnucobol_osscons_patch_version"
+
+      - name: Copy Docker image
+        run: |
+          docker tag opensourcecobol/gnucobol-osscons-patch:"$version_string_prefix" opensourcecobol/gnucobol-osscons-patch:latest
+
+      - name: Show Docker image size
+        run: |
+          docker images opensourcecobol/gnucobol-osscons-patch:"$version_string_prefix" --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}"
+
+      - name: Check the version of installed software
+        run: |
+          docker run --rm opensourcecobol/gnucobol-osscons-patch:latest cobc --version
+
+      - name: Run simple tests inside the container
+        run: |
+          docker run -itd --name test_container opensourcecobol/gnucobol-osscons-patch:latest
+          docker exec test_container sh -c "cd /root/cobol_sample && cobc -x HELLO.cbl && ./HELLO"
+          docker rm -f test_container
+
+      - name: Login to Docker Hub
+        if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.push_to_dockerhub == true
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push to Docker Hub
+        if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.push_to_dockerhub == true
+        run: |
+          docker push opensourcecobol/gnucobol-osscons-patch:"$version_string_prefix"
+          docker push opensourcecobol/gnucobol-osscons-patch:latest
