@@ -8,7 +8,7 @@ SHELL ["/bin/bash", "-c"]
 # install build dependencies
 RUN microdnf update -y && \
     microdnf install -y gcc make autoconf automake libtool gettext bison flex \
-    gmp-devel libdb-devel ncurses-devel tar gzip diffutils perl texinfo && \
+    gmp-devel libdb-devel ncurses-devel tar gzip diffutils perl && \
     microdnf clean all
 
 # build gnucobol-osscons-patch
@@ -20,7 +20,7 @@ RUN cd /root && \
     ./autogen.sh && \
     ./configure --prefix=/usr && \
     make && \
-    make install && \
+    make install MAKEINFO=true && \
     rm -rf /root/gnucobol-osscons-patch-${gnucobol_osscons_patch_version}.tar.gz \
            /root/gnucobol-osscons-patch-${gnucobol_osscons_patch_version}
 
