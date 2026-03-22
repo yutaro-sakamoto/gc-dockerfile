@@ -8,7 +8,7 @@ SHELL ["/bin/bash", "-c"]
 # install build dependencies
 RUN microdnf update -y && \
     microdnf install -y gcc make autoconf automake libtool gettext bison flex \
-    gmp-devel libdb-devel ncurses-devel tar gzip diffutils perl && \
+    gmp-devel libdb-devel ncurses-devel tar gzip diffutils perl texinfo && \
     microdnf clean all
 
 # build gnucobol-osscons-patch
@@ -42,8 +42,8 @@ RUN mkdir -p /usr/bin /usr/lib /usr/include /usr/share/gnucobol
 COPY --from=builder /usr/bin/cobc /usr/bin/cobc
 COPY --from=builder /usr/bin/cobcrun /usr/bin/cobcrun
 COPY --from=builder /usr/bin/cob-config /usr/bin/cob-config
-COPY --from=builder /usr/lib/libcob* /usr/lib/
-COPY --from=builder /usr/lib/gnucobol/ /usr/lib/gnucobol/
+COPY --from=builder /usr/lib64/libcob* /usr/lib64/
+COPY --from=builder /usr/lib64/gnucobol/ /usr/lib64/gnucobol/
 COPY --from=builder /usr/include/libcob.h /usr/include/libcob.h
 COPY --from=builder /usr/include/libcob/ /usr/include/libcob/
 COPY --from=builder /usr/share/gnucobol/ /usr/share/gnucobol/
